@@ -26,5 +26,5 @@ node {
 
         input "Deploy to PROD?"
         customImage.push('latest')
-        sh "kubectl set image deployment app app=${imageName} --record"
+        sh "kubectl set image deployment jenkins jenkins=${imageName} --record"
 }
