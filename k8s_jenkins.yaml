@@ -52,13 +52,17 @@ spec:
     tier: jenkins
   type: NodePort
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jenkins
   labels:
     app: jenkins
 spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
   strategy:
     type: Recreate
   template:
