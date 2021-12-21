@@ -1,28 +1,3 @@
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: registry
-  labels:
-    type: local
-spec:
-  capacity:
-    storage: 2Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/data/registry/"
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: registry-claim
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 2Gi
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -37,7 +12,6 @@ spec:
       name: registry
   selector:
     app: registry
-    tier: registry
   type: NodePort
 ---
 apiVersion: v1
@@ -50,27 +24,27 @@ spec:
   ports:
     - port: 8080
       targetPort: 8080
-      nodePort: 30401
-      name: registry
   selector:
     app: registry
-    tier: registry
-  type: NodePort
+  type: LoadBalancer
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: registry
   labels:
     app: registry
 spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
         app: registry
-        tier: registry
     spec:
       containers:
       - image: registry:2
@@ -78,8 +52,6 @@ spec:
         volumeMounts:
         - name: docker
           mountPath: /var/run/docker.sock
-        - name: registry-persistent-storage
-          mountPath: /var/lib/registry
         ports:
         - containerPort: 5000
           name: registry
@@ -96,6 +68,3 @@ spec:
       - name: docker
         hostPath:
           path: /var/run/docker.sock
-      - name: registry-persistent-storage
-        persistentVolumeClaim:
-          claimName: registry-claim

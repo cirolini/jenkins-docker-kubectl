@@ -36,7 +36,7 @@ matrix-auth
 matrix-project
 momentjs
 pam-auth
-pipeline
+plain-credentials
 pipeline-build-step
 pipeline-github-lib
 pipeline-graph-analysis
@@ -50,7 +50,6 @@ pipeline-rest-api
 pipeline-stage-step
 pipeline-stage-tags-metadata
 pipeline-stage-view
-plain-credentials
 resource-disposer
 scm-api
 script-security

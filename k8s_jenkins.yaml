@@ -1,4 +1,4 @@
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: jenkins-rbac
@@ -11,31 +11,6 @@ roleRef:
   name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
 ---
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: jenkins
-  labels:
-    type: local
-spec:
-  capacity:
-    storage: 2Gi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/data/jenkins/"
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: jenkins-claim
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 2Gi
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -46,44 +21,40 @@ spec:
   ports:
     - port: 80
       targetPort: 8080
-      nodePort: 32256
   selector:
     app: jenkins
-    tier: jenkins
-  type: NodePort
+  type: LoadBalancer
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jenkins
-  labels:
-    app: jenkins
 spec:
-  strategy:
-    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
   template:
     metadata:
       labels:
         app: jenkins
-        tier: jenkins
     spec:
       containers:
-      - image: cirolini/jenkins-docker-kubectl
-        name: jenkins
-        securityContext:
-          privileged: true
+      - name: jenkins
+        image: cirolini/jenkins-docker-kubectl
         ports:
-        - containerPort: 8080
-          name: jenkins
+          - name: http-port
+            containerPort: 8080
+          - name: jnlp-port
+            containerPort: 50000
         volumeMounts:
-        - name: jenkins-persistent-storage
-          mountPath: /var/jenkins_home
-        - name: docker
-          mountPath: /var/run/docker.sock
+          - name: jenkins-vol
+            mountPath: /var/jenkins_vol
+          - name: docker
+            mountPath: /var/run/docker.sock
       volumes:
-      - name: docker
-        hostPath:
-          path: /var/run/docker.sock
-      - name: jenkins-persistent-storage
-        persistentVolumeClaim:
-          claimName: jenkins-claim
+        - name: jenkins-vol
+          emptyDir: {}
+        - name: docker
+          hostPath:
+            path: /var/run/docker.sock
